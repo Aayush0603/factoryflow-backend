@@ -6,7 +6,7 @@ const {
   getTopWorkers,
   getOvertimeCost,
   getAbsentAlerts
-} = require("../controllers/analyticsController");
+} = require("../Controllers/analyticsController");
 
 /* ================= ANALYTICS ROUTES ================= */
 
