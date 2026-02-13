@@ -6,7 +6,7 @@ const {
   getWorkers,
   updateWorker,
   deleteWorker
-} = require("../controllers/workerController");
+} = require("../Controllers/workerController");
 
 // POST /api/workers
 router.post("/", addWorker);
