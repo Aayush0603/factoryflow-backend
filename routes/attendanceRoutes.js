@@ -5,7 +5,7 @@ const {
   checkOut,
   getAttendanceHistory,
   getAttendanceStatus
-} = require("../controllers/attendanceController");
+} = require("../Controllers/attendanceController");
 
 router.post("/checkin", checkIn);
 router.post("/checkout", checkOut);
