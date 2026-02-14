@@ -1,23 +1,39 @@
 const express = require("express");
 const router = express.Router();
+const Worker = require("../models/Worker");
+const Attendance = require("../models/Attendance");
 
-const {
-  addWorker,
-  getWorkers,
-  updateWorker,
-  deleteWorker
-} = require("../Controllers/workerController");
+// 🔥 GET WORKER PROFILE
+router.get("/profile/:id", async (req, res) => {
+  try {
+    const worker = await Worker.findById(req.params.id);
 
-// POST /api/workers
-router.post("/", addWorker);
+    if (!worker) {
+      return res.status(404).json({ message: "Worker not found" });
+    }
 
-// GET /api/workers
-router.get("/", getWorkers);
+    const attendance = await Attendance.find({
+      workerId: req.params.id
+    }).sort({ date: -1 });
 
-// PUT /api/workers/:id
-router.put("/:id", updateWorker);
+    const totalDaysWorked = attendance.length;
 
-// DELETE /api/workers/:id
-router.delete("/:id", deleteWorker);
+    const totalHoursWorked = attendance.reduce(
+      (sum, record) => sum + (Number(record.workHours) || 0),
+      0
+    );
+
+    res.json({
+      worker,
+      totalDaysWorked,
+      totalHoursWorked,
+      attendance
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch profile" });
+  }
+});
 
 module.exports = router;
