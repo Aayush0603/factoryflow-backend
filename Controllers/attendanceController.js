@@ -1,7 +1,22 @@
 const Attendance = require("../models/Attendance");
 
+const getISTTimeString = (date) => {
+  return date.toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+};
+
+const getISTDate = () => {
+  return new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Kolkata",
+  });
+};
+
 exports.checkIn = async (req, res) => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getISTDate();
 
   if (await Attendance.findOne({ workerId: req.body.workerId, date: today })) {
     return res.json({ message: "Already checked in" });
@@ -12,8 +27,8 @@ exports.checkIn = async (req, res) => {
   const record = new Attendance({
     workerId: req.body.workerId,
     date: today,
-    checkInTime: now,
-    checkIn: now.toLocaleTimeString()
+    checkInTime: now, // store raw UTC
+    checkIn: getISTTimeString(now) // store IST formatted time
   });
 
   await record.save();
@@ -21,7 +36,8 @@ exports.checkIn = async (req, res) => {
 };
 
 exports.checkOut = async (req, res) => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getISTDate();
+
   const record = await Attendance.findOne({
     workerId: req.body.workerId,
     date: today
@@ -31,9 +47,13 @@ exports.checkOut = async (req, res) => {
     return res.status(400).json({ message: "Invalid attendance record" });
 
   const now = new Date();
-  record.checkOutTime = now;
-  record.checkOut = now.toLocaleTimeString();
-  record.workHours = ((now - record.checkInTime) / 3600000).toFixed(2);
+
+  record.checkOutTime = now; // raw UTC
+  record.checkOut = getISTTimeString(now); // IST display time
+
+  record.workHours = (
+    (now - record.checkInTime) / 3600000
+  ).toFixed(2);
 
   await record.save();
   res.json(record);
@@ -52,7 +72,7 @@ exports.getAttendanceHistory = async (req, res) => {
 };
 
 exports.getAttendanceStatus = async (req, res) => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getISTDate();
 
   const record = await Attendance.findOne({
     workerId: req.params.workerId,
