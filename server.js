@@ -9,6 +9,7 @@ const workerRoutes = require("./routes/workerRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const salaryRoutes = require("./routes/salaryRoutes");
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use("/api/workers", workerRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/salary", salaryRoutes);
 
 // ✅ FIXED FOR DEPLOYMENT
 const PORT = process.env.PORT || 5000;
