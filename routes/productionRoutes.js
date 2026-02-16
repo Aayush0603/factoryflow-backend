@@ -163,4 +163,146 @@ router.get("/analytics/material-efficiency", async (req, res) => {
   }
 });
 
+router.get("/analytics/product-efficiency", async (req, res) => {
+  try {
+    const data = await Production.aggregate([
+      {
+        $group: {
+          _id: "$productId",
+          totalProduction: { $sum: "$quantityProduced" },
+          totalRawMaterial: { $sum: "$rawMaterialUsedKg" }
+        }
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "product"
+        }
+      },
+      { $unwind: "$product" },
+      {
+        $project: {
+          productName: "$product.name",
+          efficiency: {
+            $round: [
+              { $divide: ["$totalProduction", "$totalRawMaterial"] },
+              2
+            ]
+          }
+        }
+      }
+    ]);
+
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/analytics/machine-efficiency-ratio", async (req, res) => {
+  try {
+    const data = await Production.aggregate([
+      {
+        $group: {
+          _id: "$machineId",
+          totalProduction: { $sum: "$quantityProduced" },
+          totalRawMaterial: { $sum: "$rawMaterialUsedKg" }
+        }
+      },
+      {
+        $lookup: {
+          from: "machines",
+          localField: "_id",
+          foreignField: "_id",
+          as: "machine"
+        }
+      },
+      { $unwind: "$machine" },
+      {
+        $project: {
+          machineName: "$machine.name",
+          efficiency: {
+            $round: [
+              { $divide: ["$totalProduction", "$totalRawMaterial"] },
+              2
+            ]
+          }
+        }
+      }
+    ]);
+
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/analytics/waste-percentage", async (req, res) => {
+  try {
+    const data = await Production.aggregate([
+      {
+        $lookup: {
+          from: "products",
+          localField: "productId",
+          foreignField: "_id",
+          as: "product"
+        }
+      },
+      { $unwind: "$product" },
+      {
+        $addFields: {
+          expectedOutput: {
+            $multiply: ["$product.standardOutputPerHour", "$workingHours"]
+          }
+        }
+      },
+      {
+        $project: {
+          waste: { $subtract: ["$expectedOutput", "$quantityProduced"] },
+          wastePercentage: {
+            $round: [
+              {
+                $multiply: [
+                  {
+                    $divide: [
+                      { $subtract: ["$expectedOutput", "$quantityProduced"] },
+                      "$expectedOutput"
+                    ]
+                  },
+                  100
+                ]
+              },
+              2
+            ]
+          }
+        }
+      }
+    ]);
+
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/analytics/anomalies", async (req, res) => {
+  try {
+    const productions = await Production.find();
+
+    const anomalies = productions.filter(
+      (p) => p.efficiency < 60
+    );
+
+    res.json({
+      anomalyCount: anomalies.length,
+      anomalies
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
