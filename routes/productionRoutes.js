@@ -94,4 +94,36 @@ router.get("/summary/today", async (req, res) => {
   }
 });
 
+router.get("/analytics/machine-efficiency", async (req, res) => {
+  try {
+    const data = await Production.aggregate([
+      {
+        $group: {
+          _id: "$machineId",
+          avgEfficiency: { $avg: "$efficiency" },
+        },
+      },
+      {
+        $lookup: {
+          from: "machines",
+          localField: "_id",
+          foreignField: "_id",
+          as: "machine",
+        },
+      },
+      { $unwind: "$machine" },
+      {
+        $project: {
+          machineName: "$machine.name",
+          avgEfficiency: { $round: ["$avgEfficiency", 2] },
+        },
+      },
+    ]);
+
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
