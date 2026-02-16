@@ -126,4 +126,41 @@ router.get("/analytics/machine-efficiency", async (req, res) => {
   }
 });
 
+router.get("/analytics/material-efficiency", async (req, res) => {
+  try {
+    const data = await Production.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalProduction: { $sum: "$quantityProduced" },
+          totalRawMaterial: { $sum: "$rawMaterialUsedKg" }
+        }
+      }
+    ]);
+
+    if (!data.length || data[0].totalRawMaterial === 0) {
+      return res.json({
+        totalProduction: 0,
+        totalRawMaterial: 0,
+        efficiencyRatio: 0
+      });
+    }
+
+    const totalProduction = data[0].totalProduction;
+    const totalRawMaterial = data[0].totalRawMaterial;
+
+    const efficiencyRatio =
+      (totalProduction / totalRawMaterial).toFixed(2);
+
+    res.json({
+      totalProduction,
+      totalRawMaterial,
+      efficiencyRatio
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
