@@ -305,4 +305,40 @@ router.get("/analytics/anomalies", async (req, res) => {
   }
 });
 
+router.get("/analytics/spc-efficiency", async (req, res) => {
+  try {
+    const productions = await Production.find().sort({ productionDate: 1 });
+
+    const efficiencies = productions.map(p => p.efficiency);
+
+    if (efficiencies.length === 0) {
+      return res.json([]);
+    }
+
+    const mean =
+      efficiencies.reduce((a, b) => a + b, 0) / efficiencies.length;
+
+    const variance =
+      efficiencies.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) /
+      efficiencies.length;
+
+    const stdDev = Math.sqrt(variance);
+
+    const UCL = mean + 3 * stdDev;
+    const LCL = mean - 3 * stdDev;
+
+    const chartData = productions.map(p => ({
+      date: p.productionDate,
+      efficiency: p.efficiency,
+      mean,
+      UCL,
+      LCL
+    }));
+
+    res.json(chartData);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
