@@ -10,6 +10,9 @@ const attendanceRoutes = require("./routes/attendanceRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const salaryRoutes = require("./routes/salaryRoutes");
+const productRoutes = require("./routes/productRoutes");
+const machineRoutes = require("./routes/machineRoutes");
+const productionRoutes = require("./routes/productionRoutes");
 
 const app = express();
 
@@ -24,6 +27,9 @@ app.use("/api/attendance", attendanceRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/salary", salaryRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/machines", machineRoutes);
+app.use("/api/production", productionRoutes);
 
 // ✅ FIXED FOR DEPLOYMENT
 const PORT = process.env.PORT || 5000;
