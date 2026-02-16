@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Production = require("../models/Production");
 const Product = require("../models/Product");
+const RawMaterial = require("../models/RawMaterial");
 
 // Create Production Entry
 router.post("/", async (req, res) => {
@@ -12,6 +13,7 @@ router.post("/", async (req, res) => {
       workers,
       quantityProduced,
       rawMaterialUsedKg,
+      rawMaterialId,
       workingHours,
       shift,
       productionDate,
@@ -21,6 +23,18 @@ router.post("/", async (req, res) => {
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
+    }
+
+    const rawMaterial = await RawMaterial.findById(rawMaterialId);
+    if (!rawMaterial) {
+      return res.status(404).json({ message: "Raw material not found" });
+    }
+
+    // Prevent negative stock
+    if (rawMaterial.currentStock < rawMaterialUsedKg) {
+      return res.status(400).json({
+        message: "Insufficient raw material stock",
+      });
     }
 
     const expectedOutput =
@@ -35,6 +49,7 @@ router.post("/", async (req, res) => {
       workers,
       quantityProduced,
       rawMaterialUsedKg,
+      rawMaterialId,
       workingHours,
       shift,
       productionDate,
@@ -42,6 +57,14 @@ router.post("/", async (req, res) => {
     });
 
     await production.save();
+
+    // ==========================
+    // AUTO DEDUCT RAW MATERIAL
+    // ==========================
+    await RawMaterial.findByIdAndUpdate(rawMaterialId, {
+      $inc: { currentStock: -rawMaterialUsedKg },
+    });
+
 
     res.status(201).json(production);
   } catch (error) {
