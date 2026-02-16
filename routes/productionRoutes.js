@@ -341,4 +341,38 @@ router.get("/analytics/spc-efficiency", async (req, res) => {
   }
 });
 
+router.get("/analytics/predict-efficiency", async (req, res) => {
+  try {
+    const productions = await Production.find().sort({ productionDate: 1 });
+
+    const efficiencies = productions.map(p => p.efficiency);
+
+    if (efficiencies.length < 2) {
+      return res.json({ prediction: 0 });
+    }
+
+    const n = efficiencies.length;
+    const x = [...Array(n).keys()];
+
+    const sumX = x.reduce((a, b) => a + b, 0);
+    const sumY = efficiencies.reduce((a, b) => a + b, 0);
+    const sumXY = x.reduce((sum, xi, i) => sum + xi * efficiencies[i], 0);
+    const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
+
+    const slope =
+      (n * sumXY - sumX * sumY) /
+      (n * sumX2 - sumX * sumX);
+
+    const intercept = (sumY - slope * sumX) / n;
+
+    const nextX = n;
+    const prediction = slope * nextX + intercept;
+
+    res.json({ prediction: prediction.toFixed(2) });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
