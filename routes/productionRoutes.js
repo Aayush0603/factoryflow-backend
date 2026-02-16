@@ -59,4 +59,39 @@ router.get("/", async (req, res) => {
   res.json(productions);
 });
 
+router.get("/summary/today", async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const productions = await Production.find({
+      productionDate: { $gte: today },
+    });
+
+    const totalProduction = productions.reduce(
+      (sum, p) => sum + p.quantityProduced,
+      0
+    );
+
+    const totalRawMaterial = productions.reduce(
+      (sum, p) => sum + p.rawMaterialUsedKg,
+      0
+    );
+
+    const avgEfficiency =
+      productions.length > 0
+        ? productions.reduce((sum, p) => sum + p.efficiency, 0) /
+          productions.length
+        : 0;
+
+    res.json({
+      totalProduction,
+      totalRawMaterial,
+      avgEfficiency: avgEfficiency.toFixed(2),
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
