@@ -14,6 +14,8 @@ const productRoutes = require("./routes/productRoutes");
 const machineRoutes = require("./routes/machineRoutes");
 const productionRoutes = require("./routes/productionRoutes");
 const rawMaterialRoutes = require("./routes/rawMaterialRoutes");
+const purchaseRoutes = require("./routes/purchaseRoutes");
+const supplierRoutes = require("./routes/supplierRoutes");
 
 const app = express();
 
@@ -32,6 +34,8 @@ app.use("/api/products", productRoutes);
 app.use("/api/machines", machineRoutes);
 app.use("/api/production", productionRoutes);
 app.use("/api/raw-materials", rawMaterialRoutes);
+app.use("/api/purchases", purchaseRoutes);
+app.use("/api/suppliers", supplierRoutes);
 
 // ✅ FIXED FOR DEPLOYMENT
 const PORT = process.env.PORT || 5000;
