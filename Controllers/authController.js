@@ -48,26 +48,24 @@ exports.createAdmin = async (req, res) => {
   }
 };
 
-
-/* ================= CREATE SUPERVISOR ================= */
-exports.createSupervisor = async (req, res) => {
+exports.createUser = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, role } = req.body;
 
     const existing = await Admin.findOne({ username });
     if (existing) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const supervisor = new Admin({
+    const user = new Admin({
       username,
       password,
-      role: "supervisor"
+      role
     });
 
-    await supervisor.save();
+    await user.save();
 
-    res.json({ message: "Supervisor created successfully" });
+    res.json({ message: "User created successfully" });
 
   } catch (error) {
     console.error(error);
