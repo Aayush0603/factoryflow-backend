@@ -176,24 +176,69 @@ router.get("/dealer-inquiries/:dealerId", async (req, res) => {
 });
 
 router.post("/send-otp", async (req, res) => {
+  console.log("EMAIL_USER:", process.env.EMAIL_USER);
+  console.log("EMAIL_PASS:", process.env.EMAIL_PASS);
   try {
     const { email } = req.body;
 
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    // Generate 6 digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // Delete previous OTP for that email
     await Otp.deleteMany({ email });
 
+    // Save new OTP
     await Otp.create({
       email,
       otp,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     });
 
+    // Send email
     await sendOTP(email, otp);
 
     res.json({ message: "OTP sent successfully" });
+
   } catch (error) {
+    console.error("OTP Send Error:", error);
     res.status(500).json({ message: "Error sending OTP" });
+  }
+});
+
+router.post("/verify-otp", async (req, res) => {
+  try {
+    const email = req.body.email;
+    const otp = String(req.body.otp).trim();
+
+    const record = await Otp.findOne({ email });
+
+    if (!record) {
+      return res.status(400).json({ message: "No OTP found" });
+    }
+
+    if (record.expiresAt < new Date()) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    if (record.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    await Otp.deleteMany({ email });
+
+    const inquiries = await Inquiry.find({ email })
+      .populate("product", "name")
+      .sort({ createdAt: -1 });
+
+    res.json({ inquiries });
+
+  } catch (error) {
+    console.error("OTP Verify Error:", error);
+    res.status(500).json({ message: "Verification failed" });
   }
 });
 
