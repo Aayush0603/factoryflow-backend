@@ -14,6 +14,11 @@ const inquirySchema = new mongoose.Schema(
       ref: "Product",
     },
 
+    dealer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Dealer"
+    },
+
     quantity: Number,
     message: String,
 

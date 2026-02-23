@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
+const Otp = require("../models/Otp");
+const sendOTP = require("../utils/sendOTP");
 const Product = require("../models/Product");
 const Inquiry = require("../models/Inquiry");
 
@@ -155,6 +157,43 @@ router.get("/my-inquiries", async (req, res) => {
     res.json(inquiries);
   } catch (error) {
     res.status(500).json({ message: "Server Error" });
+  }
+});
+
+/* =========================
+   GET DEALER INQUIRIES
+========================= */
+router.get("/dealer-inquiries/:dealerId", async (req, res) => {
+  try {
+    const inquiries = await Inquiry.find({ dealer: req.params.dealerId })
+      .populate("product", "name")
+      .sort({ createdAt: -1 });
+
+    res.json(inquiries);
+  } catch (error) {
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+router.post("/send-otp", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await Otp.deleteMany({ email });
+
+    await Otp.create({
+      email,
+      otp,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+    });
+
+    await sendOTP(email, otp);
+
+    res.json({ message: "OTP sent successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error sending OTP" });
   }
 });
 
