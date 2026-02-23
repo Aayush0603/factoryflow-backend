@@ -62,4 +62,79 @@ router.post("/inquiry", async (req, res) => {
   }
 });
 
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const Dealer = require("../models/Dealer");
+
+/* =========================
+   DEALER REGISTER
+========================= */
+router.post("/dealer-register", async (req, res) => {
+  try {
+    const { companyName, contactPerson, email, mobile, address, gstNumber, password } = req.body;
+
+    const existing = await Dealer.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: "Dealer already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await Dealer.create({
+      companyName,
+      contactPerson,
+      email,
+      mobile,
+      address,
+      gstNumber,
+      password: hashedPassword,
+      isApproved: false,
+    });
+
+    res.json({ message: "Registration successful. Await admin approval." });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+/* =========================
+   DEALER LOGIN
+========================= */
+router.post("/dealer-login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const dealer = await Dealer.findOne({ email });
+    if (!dealer) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const isMatch = await bcrypt.compare(password, dealer.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    if (!dealer.isApproved) {
+      return res.status(403).json({ message: "Dealer not approved yet" });
+    }
+
+    const token = jwt.sign(
+      { id: dealer._id },
+      process.env.JWT_SECRET || "secretkey",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      token,
+      dealer: {
+        id: dealer._id,
+        companyName: dealer.companyName,
+        email: dealer.email,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
 module.exports = router;
