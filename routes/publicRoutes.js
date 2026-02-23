@@ -137,4 +137,25 @@ router.post("/dealer-login", async (req, res) => {
   }
 });
 
+/* =========================
+   GET INQUIRIES BY EMAIL
+========================= */
+router.get("/my-inquiries", async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const inquiries = await Inquiry.find({ email })
+      .populate("product", "name")
+      .sort({ createdAt: -1 });
+
+    res.json(inquiries);
+  } catch (error) {
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
 module.exports = router;
