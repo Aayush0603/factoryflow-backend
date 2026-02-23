@@ -2,20 +2,21 @@ const nodemailer = require("nodemailer");
 
 const sendOTP = async (email, otp) => {
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp-relay.brevo.com",
+    port: 587,
+    secure: false,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: process.env.BREVO_USER,
+      pass: process.env.BREVO_PASS,
     },
   });
 
   await transporter.sendMail({
-    from: `"FactoryFlow" <${process.env.EMAIL_USER}>`,
+    from: `"FactoryFlow" <${process.env.BREVO_USER}>`,
     to: email,
     subject: "Your OTP for Inquiry Tracking",
     html: `
       <h2>Your OTP Code</h2>
-      <p>Your OTP is:</p>
       <h1>${otp}</h1>
       <p>This OTP is valid for 5 minutes.</p>
     `,
