@@ -308,4 +308,20 @@ router.post("/verify-payment", async (req, res) => {
   }
 });
 
+// =========================
+// ADMIN - GET ALL INQUIRIES
+// =========================
+router.get("/admin/inquiries", async (req, res) => {
+  try {
+    const inquiries = await Inquiry.find()
+      .populate("product", "name")
+      .sort({ createdAt: -1 });
+
+    res.json(inquiries);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
 module.exports = router;
