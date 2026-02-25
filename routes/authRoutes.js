@@ -2,17 +2,19 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  loginAdmin,
-  createAdmin,
-  createUser,   // ✅ change here
+  signup,
+  login,
   getAllUsers,
   deleteUser
-} = require("../Controllers/authController");
-router.post("/login", loginAdmin);
-router.get("/create-admin", createAdmin);
-router.post("/create-user", createUser);
+} = require("../controllers/authController");
 
-router.get("/users", getAllUsers);
-router.delete("/users/:id", deleteUser);
+const { protect, authorizeRoles } = require("../middleware/authMiddleware");
+
+router.post("/signup", signup);
+router.post("/login", login);
+
+// 🔐 Admin Only
+router.get("/users", protect, authorizeRoles("admin"), getAllUsers);
+router.delete("/users/:id", protect, authorizeRoles("admin"), deleteUser);
 
 module.exports = router;

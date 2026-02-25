@@ -1,98 +1,102 @@
-const Admin = require("../models/Admin");
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
-/* ================= LOGIN ================= */
-exports.loginAdmin = async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    const admin = await Admin.findOne({ username });
-
-    if (!admin || admin.password !== password) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    res.json({
-      message: "Login successful",
-      admin: {
-        id: admin._id,
-        username: admin.username,
-        role: admin.role
-      }
-    });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server Error" });
-  }
+/* ================= TOKEN GENERATOR ================= */
+const generateToken = (id, role) => {
+  return jwt.sign(
+    { id, role },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
 };
 
-
-/* ================= CREATE ADMIN ================= */
-exports.createAdmin = async (req, res) => {
+/* ================= SIGNUP ================= */
+exports.signup = async (req, res) => {
   try {
-    await Admin.deleteMany({});
+    const { name, email, password, role } = req.body;
 
-    const newAdmin = new Admin({
-      username: "admin",
-      password: "admin123",
-      role: "admin"
-    });
-
-    await newAdmin.save();
-
-    res.json({ message: "Admin created successfully" });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server Error" });
-  }
-};
-
-exports.createUser = async (req, res) => {
-  try {
-    const { username, password, role } = req.body;
-
-    const existing = await Admin.findOne({ username });
+    const existing = await User.findOne({ email });
     if (existing) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const user = new Admin({
-      username,
-      password,
-      role
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: role === "dealer" ? "dealer_pending" : role
     });
 
-    await user.save();
+    const token = generateToken(user._id, user.role);
 
-    res.json({ message: "User created successfully" });
+    res.status(201).json({
+      message: "Signup successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
 
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Server Error" });
   }
 };
 
+/* ================= LOGIN ================= */
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-/* ================= GET ALL USERS ================= */
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const token = generateToken(user._id, user.role);
+
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+/* ================= GET ALL USERS (ADMIN ONLY) ================= */
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await Admin.find().select("-password");
+    const users = await User.find().select("-password");
     res.json(users);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Server Error" });
   }
 };
-
 
 /* ================= DELETE USER ================= */
 exports.deleteUser = async (req, res) => {
   try {
-    await Admin.findByIdAndDelete(req.params.id);
+    await User.findByIdAndDelete(req.params.id);
     res.json({ message: "User deleted successfully" });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Server Error" });
   }
 };
