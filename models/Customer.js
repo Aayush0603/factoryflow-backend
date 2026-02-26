@@ -17,15 +17,11 @@ const customerSchema = new mongoose.Schema(
       type: String
     },
 
-    // 🔐 Password only for normal login users
     password: {
       type: String,
-      required: function () {
-        return !this.googleId; 
-      }
+      required: false // ✅ important for Google users
     },
 
-    // 🔵 Google Login Support
     googleId: {
       type: String
     },
