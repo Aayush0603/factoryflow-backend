@@ -19,6 +19,7 @@ const purchaseRoutes = require("./routes/purchaseRoutes");
 const supplierRoutes = require("./routes/supplierRoutes");
 const productionTargetRoutes = require("./routes/productionTargetRoutes");
 const publicRoutes = require("./routes/publicRoutes");
+const customerAuthRoutes = require("./routes/customerAuthRoutes");
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use("/api/purchases", purchaseRoutes);
 app.use("/api/suppliers", supplierRoutes);
 app.use("/api/targets", productionTargetRoutes);
 app.use("/api/public", publicRoutes);
+app.use("/api/customer", customerAuthRoutes);
 
 // ✅ FIXED FOR DEPLOYMENT
 const PORT = process.env.PORT || 5000;
