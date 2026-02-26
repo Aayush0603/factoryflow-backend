@@ -6,6 +6,8 @@ const sendOTP = require("../utils/sendOTP");
 const Product = require("../models/Product");
 const Inquiry = require("../models/Inquiry");
 
+const optionalCustomerAuth = require("../middleware/optionalCustomerAuth");
+
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const Payment = require("../models/Payment");
@@ -51,7 +53,7 @@ router.get("/products/:id", async (req, res) => {
 /* =========================
    CREATE INQUIRY
 ========================= */
-router.post("/inquiry", async (req, res) => {
+router.post("/inquiry", optionalCustomerAuth, async (req, res) => {
   try {
     const { name, email, phone, product, quantity, message } = req.body;
 
@@ -62,17 +64,18 @@ router.post("/inquiry", async (req, res) => {
       product,
       quantity,
       message,
+      customer: req.user ? req.user._id : null
     });
 
     res.json({
       message: "Inquiry submitted successfully",
       inquiry: newInquiry,
     });
+
   } catch (error) {
     res.status(500).json({ message: "Server Error" });
   }
 });
-
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Dealer = require("../models/Dealer");

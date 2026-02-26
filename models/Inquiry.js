@@ -6,6 +6,7 @@ const inquirySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
     email: String,
     phone: String,
 
@@ -17,6 +18,13 @@ const inquirySchema = new mongoose.Schema(
     dealer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Dealer"
+    },
+
+    // ✅ ADD THIS
+    customer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      required: false
     },
 
     quantity: Number,
