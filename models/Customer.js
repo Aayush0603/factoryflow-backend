@@ -19,7 +19,7 @@ const customerSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required: false // ✅ important for Google users
+      required: false // ✅ Important for Google users
     },
 
     googleId: {
@@ -28,6 +28,15 @@ const customerSchema = new mongoose.Schema(
 
     avatar: {
       type: String
+    },
+
+    // ✅ Forgot Password Fields
+    resetPasswordToken: {
+      type: String
+    },
+
+    resetPasswordExpire: {
+      type: Date
     }
   },
   { timestamps: true }
