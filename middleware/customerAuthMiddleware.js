@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const Customer = require("../models/Customer");
 
-module.exports = async function (req, res, next) {
+module.exports = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -15,11 +15,8 @@ module.exports = async function (req, res, next) {
 
     req.user = await Customer.findById(decoded.id).select("-password");
 
-    if (!req.user) {
-      return res.status(401).json({ message: "User not found" });
-    }
-
     next();
+
   } catch (error) {
     return res.status(401).json({ message: "Invalid token" });
   }

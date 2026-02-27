@@ -157,4 +157,41 @@ router.post("/change-password", customerAuthMiddleware, async (req, res) => {
   }
 });
 
+const protect = require("../middleware/customerAuthMiddleware"); 
+// make sure this middleware verifies customer JWT
+
+/* =========================
+   CHANGE PASSWORD (LOGGED IN)
+========================= */
+router.put("/change-password", protect, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    const customer = await Customer.findById(req.user.id);
+
+    if (!customer) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Compare old password
+    const isMatch = await bcrypt.compare(currentPassword, customer.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password incorrect" });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    customer.password = hashedPassword;
+    await customer.save();
+
+    res.json({ message: "Password changed successfully" });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
 module.exports = router;
