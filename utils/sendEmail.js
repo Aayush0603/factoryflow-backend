@@ -1,21 +1,20 @@
-const axios = require("axios");
+const nodemailer = require("nodemailer");
 
 const sendEmail = async (to, subject, text) => {
-  await axios.post(
-    "https://api.brevo.com/v3/smtp/email",
-    {
-      sender: { name: "FactoryFlow", email: process.env.EMAIL_USER },
-      to: [{ email: to }],
-      subject,
-      textContent: text
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
     },
-    {
-      headers: {
-        "api-key": process.env.BREVO_API_KEY,
-        "Content-Type": "application/json"
-      }
-    }
-  );
+  });
+
+  await transporter.sendMail({
+    from: `"FactoryFlow" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    text,
+  });
 };
 
 module.exports = sendEmail;
