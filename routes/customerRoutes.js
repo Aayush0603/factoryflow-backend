@@ -3,84 +3,22 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
+const crypto = require("crypto");
 
+const sendEmail = require("../utils/sendEmail");
 const Customer = require("../models/Customer");
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-/* =========================
-   CUSTOMER REGISTER
-========================= */
-router.post("/register", async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-
-    const existing = await Customer.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ message: "Customer already exists" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const customer = await Customer.create({
-      name,
-      email,
-      password: hashedPassword,
-    });
-
-    const token = jwt.sign(
-      { id: customer._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    res.json({ token, customer });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server Error" });
-  }
-});
-
-/* =========================
-   CUSTOMER LOGIN
-========================= */
-router.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const customer = await Customer.findOne({ email });
-    if (!customer) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    const isMatch = await bcrypt.compare(password, customer.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    const token = jwt.sign(
-      { id: customer._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    res.json({ token, customer });
-
-  } catch (error) {
-    res.status(500).json({ message: "Server Error" });
-  }
-});
 
 /* =========================
    GOOGLE LOGIN
 ========================= */
 router.post("/google-login", async (req, res) => {
   try {
-    const { token } = req.body;
+    const { credential } = req.body;
 
     const ticket = await client.verifyIdToken({
-      idToken: token,
+      idToken: credential,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
 
@@ -107,14 +45,13 @@ router.post("/google-login", async (req, res) => {
     res.json({ token: jwtToken, customer });
 
   } catch (error) {
-    console.error("Google Login Error:", error);
     res.status(500).json({ message: "Google login failed" });
   }
 });
 
-const crypto = require("crypto");
-const sendEmail = require("../utils/sendEmail"); // create this if not exists
-
+/* =========================
+   FORGOT PASSWORD
+========================= */
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
@@ -131,7 +68,7 @@ router.post("/forgot-password", async (req, res) => {
       .update(resetToken)
       .digest("hex");
 
-    customer.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 min
+    customer.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
 
     await customer.save();
 
@@ -140,17 +77,19 @@ router.post("/forgot-password", async (req, res) => {
     await sendEmail(
       customer.email,
       "Password Reset",
-      `Click here to reset password: ${resetUrl}`
+      `Click here to reset your password:\n\n${resetUrl}`
     );
 
     res.json({ message: "Reset email sent" });
 
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Server Error" });
   }
 });
 
+/* =========================
+   RESET PASSWORD
+========================= */
 router.post("/reset-password/:token", async (req, res) => {
   try {
     const hashedToken = crypto
@@ -176,6 +115,42 @@ router.post("/reset-password/:token", async (req, res) => {
     await customer.save();
 
     res.json({ message: "Password updated successfully" });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+/* =========================
+   CHANGE PASSWORD (LOGGED IN)
+========================= */
+const customerAuthMiddleware = require("../middleware/customerAuthMiddleware");
+
+router.post("/change-password", customerAuthMiddleware, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    const customer = await Customer.findById(req.user.id);
+
+    if (!customer || !customer.password) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    const isMatch = await bcrypt.compare(
+      currentPassword,
+      customer.password
+    );
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password incorrect" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    customer.password = hashedPassword;
+
+    await customer.save();
+
+    res.json({ message: "Password changed successfully" });
 
   } catch (error) {
     res.status(500).json({ message: "Server Error" });
