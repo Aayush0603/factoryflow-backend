@@ -154,15 +154,13 @@ router.post("/dealer-login", async (req, res) => {
 /* =========================
    GET INQUIRIES BY EMAIL
 ========================= */
-router.get("/my-inquiries", async (req, res) => {
+const customerAuth = require("../middleware/customerAuthMiddleware");
+
+router.get("/my-inquiries", customerAuth, async (req, res) => {
   try {
-    const { email } = req.query;
-
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
-    }
-
-    const inquiries = await Inquiry.find({ email })
+    const inquiries = await Inquiry.find({
+      customer: req.customer.id
+    })
       .populate("product", "name")
       .sort({ createdAt: -1 });
 
