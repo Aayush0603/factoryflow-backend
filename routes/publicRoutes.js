@@ -156,8 +156,6 @@ router.post("/dealer-login", async (req, res) => {
 /* =========================
    GET INQUIRIES BY EMAIL
 ========================= */
-const customerAuth = require("../middleware/customerAuthMiddleware");
-
 router.get("/my-inquiries", customerAuthMiddleware, async (req, res) => {
   try {
     const inquiries = await Inquiry.find({
