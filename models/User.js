@@ -15,8 +15,7 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required: true,
-      select: false   // 🔐 hides password by default
+      required: true
     },
 
     role: {
@@ -25,7 +24,7 @@ const userSchema = new mongoose.Schema(
       default: "customer"
     },
 
-    // ✅ Forgot Password Fields
+    // ✅ ADD THESE
     resetPasswordToken: {
       type: String
     },
