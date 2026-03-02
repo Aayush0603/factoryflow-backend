@@ -3,25 +3,27 @@ const Customer = require("../models/Customer");
 
 module.exports = async (req, res, next) => {
   try {
-    if (!req.headers.authorization || !req.headers.authorization.startsWith("Bearer")) {
-      return res.status(401).json({ message: "Not authorized" });
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "No token provided" });
     }
 
-    const token = req.headers.authorization.split(" ")[1];
+    const token = authHeader.split(" ")[1];
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const customer = await Customer.findById(decoded.id).select("-password");
 
     if (!customer) {
-      return res.status(401).json({ message: "Customer not found" });
+      return res.status(401).json({ message: "User not found" });
     }
 
-    req.customer = customer;   // ✅ use req.customer (clean separation from ERP user)
+    req.user = customer;
 
     next();
-
   } catch (error) {
+    console.error("Auth Middleware Error:", error);
     return res.status(401).json({ message: "Invalid token" });
   }
 };

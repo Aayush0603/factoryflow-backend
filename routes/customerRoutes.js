@@ -7,6 +7,7 @@ const crypto = require("crypto");
 
 const sendEmail = require("../utils/sendEmail");
 const Customer = require("../models/Customer");
+const customerAuthMiddleware = require("../middleware/customerAuthMiddleware");
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -45,6 +46,7 @@ router.post("/google-login", async (req, res) => {
     res.json({ token: jwtToken, customer });
 
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Google login failed" });
   }
 });
@@ -83,6 +85,7 @@ router.post("/forgot-password", async (req, res) => {
     res.json({ message: "Reset email sent" });
 
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server Error" });
   }
 });
@@ -106,9 +109,7 @@ router.post("/reset-password/:token", async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired token" });
     }
 
-    const hashedPassword = await bcrypt.hash(req.body.password, 10);
-
-    customer.password = hashedPassword;
+    customer.password = await bcrypt.hash(req.body.password, 10);
     customer.resetPasswordToken = undefined;
     customer.resetPasswordExpire = undefined;
 
@@ -117,16 +118,14 @@ router.post("/reset-password/:token", async (req, res) => {
     res.json({ message: "Password updated successfully" });
 
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server Error" });
   }
 });
 
-
 /* =========================
    CHANGE PASSWORD (LOGGED IN)
 ========================= */
-const customerAuthMiddleware = require("../middleware/customerAuthMiddleware");
-
 router.put("/change-password", customerAuthMiddleware, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -137,10 +136,9 @@ router.put("/change-password", customerAuthMiddleware, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // 🚨 If Google user (no password set)
     if (!customer.password) {
       return res.status(400).json({
-        message: "Password change not allowed for Google login users"
+        message: "Password change not allowed for Google users"
       });
     }
 
