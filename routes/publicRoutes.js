@@ -156,20 +156,21 @@ router.post("/dealer-login", async (req, res) => {
 ========================= */
 const customerAuth = require("../middleware/customerAuthMiddleware");
 
-router.get("/my-inquiries", customerAuth, async (req, res) => {
+router.get("/my-inquiries", customerAuthMiddleware, async (req, res) => {
   try {
     const inquiries = await Inquiry.find({
-      customer: req.customer.id
+      customer: req.user._id
     })
       .populate("product", "name")
       .sort({ createdAt: -1 });
 
     res.json(inquiries);
+
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server Error" });
   }
 });
-
 /* =========================
    GET DEALER INQUIRIES
 ========================= */
