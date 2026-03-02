@@ -26,12 +26,22 @@ const app = express();
 
 connectDB();
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://factoryflow-portal.vercel.app",
+  "https://factoryflow-frontend.vercel.app" 
+];
+
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "https://factoryflow-portal.vercel.app"
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error("CORS not allowed"), false);
+    }
+
+    return callback(null, true);
+  },
   credentials: true
 }));
 
