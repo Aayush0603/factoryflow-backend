@@ -6,6 +6,8 @@ const sendOTP = require("../utils/sendOTP");
 const Product = require("../models/Product");
 const Inquiry = require("../models/Inquiry");
 
+const customerAuthMiddleware = require("../middleware/customerAuthMiddleware");
+
 const optionalCustomerAuth = require("../middleware/optionalCustomerAuth");
 
 const Razorpay = require("razorpay");
